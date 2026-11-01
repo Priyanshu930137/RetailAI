@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="RetailAI - AI Demand Forecasting and Dynamic Pricing Advisor for Local Retailers"
+  >
+
+  <title>RetailAI | Smart Retail Intelligence</title>
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="./css/style.css">
+
+  <!-- Chart.js -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/chart.js"
+    defer
+  ></script>
+</head>
+
+<body>
+
+  <div class="app-shell">
+
+    <!-- =========================================
+         SIDEBAR
+    ========================================== -->
+    <aside class="sidebar">
+
+      <div class="brand">
+        <div class="brand-logo">R</div>
+
+        <div>
+          <h2>RetailAI</h2>
+          <p>Smart Retail Intelligence</p>
+        </div>
+      </div>
+
+
+      <!-- Store Information -->
+      <div class="store-card">
+        <div class="store-avatar">🏪</div>
+
+        <div>
+          <strong>My Retail Store</strong>
+          <p>Local Business Dashboard</p>
+        </div>
+      </div>
+
+
+      <p
+        class="nav-heading"
+        data-i18n="workspace"
+      >
+        WORKSPACE
+      </p>
+
+
+      <!-- Navigation -->
+      <nav class="navigation">
+
+        <a
+          href="#dashboard"
+          class="nav-link active"
+        >
+          <span>▦</span>
+          <span data-i18n="dashboard">Dashboard</span>
+        </a>
+
+        <a
+          href="#forecast"
+          class="nav-link"
+        >
+          <span>📈</span>
+          <span data-i18n="forecast">Demand Forecast</span>
+        </a>
+
+        <a
+          href="#inventory"
+          class="nav-link"
+        >
+          <span>📦</span>
+          <span data-i18n="inventory">Inventory</span>
+        </a>
+
+        <a
+          href="#pricing"
+          class="nav-link"
+        >
+          <span>₹</span>
+          <span data-i18n="pricing">Pricing Advisor</span>
+        </a>
+
+        <a
+          href="#upload"
+          class="nav-link"
+        >
+          <span>↑</span>
+          <span data-i18n="upload">Upload Sales Data</span>
+        </a>
+
+      </nav>
+
+
+      <!-- Backend Status -->
+      <div class="sidebar-bottom">
+
+        <span class="status-dot"></span>
+
+        <div>
+          <strong>System Status</strong>
+          <p>RetailAI Prototype</p>
+        </div>
+
+      </div>
+
+    </aside>
+
+
+    <!-- =========================================
+         MAIN CONTENT
+    ========================================== -->
+    <main class="main-content">
+
+
+      <!-- =========================================
+           TOP HEADER
+      ========================================== -->
+      <header
+        class="topbar"
+        id="dashboard"
+      >
+
+        <div>
+
+          <p
+            class="eyebrow"
+            data-i18n="overview"
+          >
+            RETAIL INTELLIGENCE
+          </p>
+
+          <h1
+            data-i18n="welcome"
+          >
+            Good evening, Retailer 👋
+          </h1>
+
+          <p
+            class="muted"
+            data-i18n="subtitle"
+          >
+            Understand demand, control stock, and make smarter pricing decisions.
+          </p>
+
+        </div>
+
+
+        <div class="topbar-actions">
+
+          <!-- Language Selector -->
+          <select
+            id="languageSelect"
+            aria-label="Select language"
+          >
+            <option value="en">English</option>
+            <option value="hi">हिंदी</option>
+          </select>
+
+
+          <!-- Date -->
+          <div
+            class="date-chip"
+            id="todayDate"
+          >
+            Loading date...
+          </div>
+
+        </div>
+
+      </header>
+
+
+      <!-- =========================================
+           KPI CARDS
+      ========================================== -->
+      <section
+        class="kpi-grid"
+        aria-label="Retail performance overview"
+      >
+
+
+        <!-- Sales Revenue -->
+        <article class="kpi-card">
+
+          <div class="kpi-top">
+
+            <span data-i18n="sales">
+              Sales Revenue
+            </span>
+
+            <span class="kpi-icon purple">
+              ₹
+            </span>
+
+          </div>
+
+          <h2>₹1,57,050</h2>
+
+          <p
+            class="kpi-note positive"
+            data-i18n="vsweek"
+          >
+            vs last week
+          </p>
+
+        </article>
+
+
+        <!-- Units Sold -->
+        <article class="kpi-card">
+
+          <div class="kpi-top">
+
+            <span data-i18n="units">
+              Units Sold
+            </span>
+
+            <span class="kpi-icon blue">
+              📊
+            </span>
+
+          </div>
+
+          <h2>333</h2>
+
+          <p
+            class="kpi-note positive"
+            data-i18n="vsweek"
+          >
+            vs last week
+          </p>
+
+        </article>
+
+
+        <!-- Low Stock -->
+        <article class="kpi-card">
+
+          <div class="kpi-top">
+
+            <span data-i18n="lowstock">
+              Low Stock Items
+            </span>
+
+            <span class="kpi-icon orange">
+              📦
+            </span>
+
+          </div>
+
+          <!-- Updated automatically by app.js -->
+          <h2 id="lowStockValue">0</h2>
+
+          <p
+            class="kpi-note warning"
+            data-i18n="restock"
+          >
+            Need restocking soon
+          </p>
+
+        </article>
+
+
+        <!-- Forecast Accuracy -->
+        <article class="kpi-card">
+
+          <div class="kpi-top">
+
+            <span data-i18n="forecastaccuracy">
+              Forecast Accuracy
+            </span>
+
+            <span class="kpi-icon green">
+              ✓
+            </span>
+
+          </div>
+
+          <h2>--</h2>
+
+          <p
+            class="kpi-note"
+            data-i18n="modelpending"
+          >
+            Available after model evaluation
+          </p>
+
+        </article>
+
+      </section>
+
+
+      <!-- =========================================
+           DASHBOARD CHARTS
+      ========================================== -->
+      <section class="chart-grid">
+
+
+        <!-- Sales Chart -->
+        <article class="panel">
+
+          <div class="panel-header">
+
+            <div>
+
+              <h3
+                data-i18n="salestrend"
+              >
+                Sales Trend
+              </h3>
+
+              <p
+                class="muted"
+                data-i18n="salestrenddesc"
+              >
+                Sample revenue over the last 7 days
+              </p>
+
+            </div>
+
+            <span class="small-tag">
+              7 DAYS
+            </span>
+
+          </div>
+
+
+          <div class="chart-container">
+
+            <canvas
+              id="salesChart"
+              aria-label="Sales revenue chart"
+            ></canvas>
+
+          </div>
+
+        </article>
+
+
+        <!-- Demand Chart -->
+        <article class="panel">
+
+          <div class="panel-header">
+
+            <div>
+
+              <h3
+                data-i18n="demandchart"
+              >
+                Demand Overview
+              </h3>
+
+              <p
+                class="muted"
+                data-i18n="demanddesc"
+              >
+                Sample units sold by product
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div class="chart-container">
+
+            <canvas
+              id="demandChart"
+              aria-label="Product demand chart"
+            ></canvas>
+
+          </div>
+
+        </article>
+
+      </section>
+
+
+      <!-- =========================================
+           DEMAND FORECAST
+      ========================================== -->
+      <section
+        class="panel section-panel"
+        id="forecast"
+      >
+
+        <div class="panel-header">
+
+          <div>
+
+            <p
+              class="eyebrow"
+              data-i18n="planning"
+            >
+              PLANNING TOOL
+            </p>
+
+            <h3
+              data-i18n="forecasttitle"
+            >
+              Demand Forecast Preview
+            </h3>
+
+            <p
+              class="muted"
+              data-i18n="forecastdesc"
+            >
+              Estimate future demand using a simple historical average.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <!-- Forecast Form -->
+        <div class="form-grid">
+
+
+          <div class="field">
+
+            <label
+              for="forecastProduct"
+              data-i18n="product"
+            >
+              Product
+            </label>
+
+            <select id="forecastProduct">
+
+              <option value="Rice">
+                Rice
+              </option>
+
+              <option value="Milk">
+                Milk
+              </option>
+
+              <option value="Cooking Oil">
+                Cooking Oil
+              </option>
+
+              <option value="Biscuits">
+                Biscuits
+              </option>
+
+              <option value="Soap">
+                Soap
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="field">
+
+            <label
+              for="forecastDays"
+              data-i18n="horizon"
+            >
+              Forecast period
+            </label>
+
+            <select id="forecastDays">
+
+              <option value="7">
+                7 Days
+              </option>
+
+              <option value="14">
+                14 Days
+              </option>
+
+              <option value="30">
+                30 Days
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="field button-field">
+
+            <button
+              type="button"
+              id="forecastBtn"
+              class="primary-btn"
+              data-i18n="generate"
+            >
+              Generate Forecast
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <!-- Forecast Results -->
+        <div class="result-box">
+
+          <div>
+
+            <p
+              class="muted"
+              data-i18n="estimateddemand"
+            >
+              Estimated total demand
+            </p>
+
+            <h2 id="forecastTotal">
+              --
+            </h2>
+
+          </div>
+
+
+          <div>
+
+            <p
+              class="muted"
+              data-i18n="dailyaverage"
+            >
+              Average daily demand
+            </p>
+
+            <h2 id="forecastAverage">
+              --
+            </h2>
+
+          </div>
+
+
+          <p
+            class="result-note"
+            id="forecastNote"
+          >
+            Select a product and forecast period.
+          </p>
+
+        </div>
+
+
+        <!-- Forecast Chart -->
+        <div class="chart-container forecast-chart">
+
+          <canvas
+            id="forecastChart"
+            aria-label="Demand forecast chart"
+          ></canvas>
+
+        </div>
+
+
+        <p
+          class="disclaimer"
+          data-i18n="forecastdisclaimer"
+        >
+          This is a demonstration using sample historical averages, not a trained machine-learning model.
+        </p>
+
+      </section>
+
+
+      <!-- =========================================
+           INVENTORY
+      ========================================== -->
+      <section
+        class="panel section-panel"
+        id="inventory"
+      >
+
+        <div
+          class="panel-header responsive-header"
+        >
+
+          <div>
+
+            <h3
+              data-i18n="inventorytitle"
+            >
+              Inventory Management
+            </h3>
+
+            <p
+              class="muted"
+              data-i18n="inventorydesc"
+            >
+              Check current stock and identify products that may need replenishment.
+            </p>
+
+          </div>
+
+
+          <!-- Product Search -->
+          <input
+            type="search"
+            id="inventorySearch"
+            class="search-input"
+            placeholder="Search products..."
+            aria-label="Search inventory"
+          >
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+          <table>
+
+            <thead>
+
+              <tr>
+
+                <th data-i18n="product">
+                  Product
+                </th>
+
+                <th data-i18n="stock">
+                  Current Stock
+                </th>
+
+                <th data-i18n="dailyavg">
+                  Daily Average
+                </th>
+
+                <th data-i18n="stockstatus">
+                  Stock Status
+                </th>
+
+                <th data-i18n="suggestion">
+                  Suggestion
+                </th>
+
+              </tr>
+
+            </thead>
+
+
+            <!-- Filled dynamically by app.js -->
+            <tbody id="inventoryBody">
+
+              <tr>
+                <td colspan="5">
+                  Loading inventory...
+                </td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+
+        <p
+          class="muted table-footnote"
+          data-i18n="inventorydemo"
+        >
+          Illustrative data only. Suggested replenishment is a basic demo calculation.
+        </p>
+
+      </section>
+
+
+      <!-- =========================================
+           PRICING ADVISOR
+      ========================================== -->
+      <section
+        class="panel section-panel"
+        id="pricing"
+      >
+
+        <div class="panel-header">
+
+          <div>
+
+            <p
+              class="eyebrow"
+              data-i18n="pricingtool"
+            >
+              PRICING TOOL
+            </p>
+
+            <h3
+              data-i18n="pricingtitle"
+            >
+              Pricing Advisor
+            </h3>
+
+            <p
+              class="muted"
+              data-i18n="pricingdesc"
+            >
+              Compare a proposed selling price against your cost and minimum margin.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="pricing-grid">
+
+
+          <!-- Pricing Form -->
+          <div class="pricing-form">
+
+
+            <div class="field">
+
+              <label
+                for="productCost"
+                data-i18n="cost"
+              >
+                Cost per unit (₹)
+              </label>
+
+              <input
+                type="number"
+                id="productCost"
+                min="0"
+                step="0.01"
+                value="45"
+              >
+
+            </div>
+
+
+            <div class="field">
+
+              <label
+                for="currentPrice"
+                data-i18n="currentprice"
+              >
+                Current price (₹)
+              </label>
+
+              <input
+                type="number"
+                id="currentPrice"
+                min="0"
+                step="0.01"
+                value="60"
+              >
+
+            </div>
+
+
+            <div class="field">
+
+              <label
+                for="proposedPrice"
+                data-i18n="proposedprice"
+              >
+                Proposed price (₹)
+              </label>
+
+              <input
+                type="number"
+                id="proposedPrice"
+                min="0"
+                step="0.01"
+                value="65"
+              >
+
+            </div>
+
+
+            <div class="field">
+
+              <label
+                for="minimumMargin"
+                data-i18n="minmargin"
+              >
+                Minimum margin (%)
+              </label>
+
+              <input
+                type="number"
+                id="minimumMargin"
+                min="0"
+                max="99"
+                step="1"
+                value="20"
+              >
+
+            </div>
+
+
+            <button
+              type="button"
+              id="pricingBtn"
+              class="primary-btn"
+              data-i18n="analyzeprice"
+            >
+              Analyze Price
+            </button>
+
+          </div>
+
+
+          <!-- Pricing Results -->
+          <div class="pricing-results">
+
+
+            <div class="metric-box">
+
+              <p
+                class="muted"
+                data-i18n="currentmargin"
+              >
+                Current gross margin
+              </p>
+
+              <h2 id="currentMarginResult">
+                --
+              </h2>
+
+            </div>
+
+
+            <div class="metric-box">
+
+              <p
+                class="muted"
+                data-i18n="proposedmargin"
+              >
+                Proposed gross margin
+              </p>
+
+              <h2 id="proposedMarginResult">
+                --
+              </h2>
+
+            </div>
+
+
+            <div class="metric-box">
+
+              <p
+                class="muted"
+                data-i18n="profitperunit"
+              >
+                Proposed profit per unit
+              </p>
+
+              <h2 id="profitResult">
+                --
+              </h2>
+
+            </div>
+
+
+            <div
+              class="price-advice"
+              id="pricingAdvice"
+            >
+              Enter pricing information to receive an analysis.
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <p
+          class="disclaimer"
+          data-i18n="pricingdisclaimer"
+        >
+          This calculator checks unit economics only. It does not predict customer demand.
+        </p>
+
+      </section>
+
+
+      <!-- =========================================
+           CSV SALES DATA UPLOAD
+      ========================================== -->
+      <section
+        class="panel section-panel"
+        id="upload"
+      >
+
+        <div class="panel-header">
+
+          <div>
+
+            <p
+              class="eyebrow"
+              data-i18n="dataimport"
+            >
+              DATA IMPORT
+            </p>
+
+            <h3
+              data-i18n="uploadtitle"
+            >
+              Upload Sales Data
+            </h3>
+
+            <p
+              class="muted"
+              data-i18n="uploaddesc"
+            >
+              Upload and preview your CSV sales file.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <!-- Upload Area -->
+        <div class="upload-area">
+
+          <div class="upload-icon">
+            ↑
+          </div>
+
+
+          <h4
+            data-i18n="choosecsv"
+          >
+            Choose a sales CSV file
+          </h4>
+
+
+          <p
+            class="muted"
+            data-i18n="csvformat"
+          >
+            Recommended columns: date, product, quantity, price
+          </p>
+
+
+          <!-- CSV File Input -->
+          <input
+            type="file"
+            id="csvFile"
+            accept=".csv,text/csv"
+            aria-label="Choose sales CSV file"
+          >
+
+
+          <div class="upload-actions">
+
+            <button
+              type="button"
+              id="downloadTemplateBtn"
+              class="secondary-btn"
+              data-i18n="downloadtemplate"
+            >
+              Download CSV Template
+            </button>
+
+          </div>
+
+
+          <!-- Validation Message -->
+          <p
+            id="csvMessage"
+            class="upload-message"
+            aria-live="polite"
+          ></p>
+
+        </div>
+
+
+        <!-- =====================================
+             CSV PREVIEW
+        ====================================== -->
+        <div
+          class="csv-preview hidden"
+          id="csvPreviewSection"
+        >
+
+          <div class="panel-header">
+
+            <div>
+
+              <h4
+                data-i18n="csvpreview"
+              >
+                CSV Preview
+              </h4>
+
+              <p
+                class="muted"
+                id="csvSummary"
+              ></p>
+
+            </div>
+
+
+            <!-- Save Button -->
+            <button
+              type="button"
+              id="saveCsvBtn"
+              class="primary-btn"
+              disabled
+            >
+              Save Sales Data to Database
+            </button>
+
+          </div>
+
+
+          <div class="table-wrapper">
+
+            <table>
+
+              <thead id="csvHead"></thead>
+
+              <tbody id="csvBody"></tbody>
+
+            </table>
+
+          </div>
+
+
+          <!-- Database Upload Status -->
+          <p
+            id="csvUploadStatus"
+            class="upload-message"
+            aria-live="polite"
+          ></p>
+
+        </div>
+
+
+        <p
+          class="disclaimer"
+          data-i18n="csvdisclaimer"
+        >
+          Your data is validated before being sent to the database.
+        </p>
+
+      </section>
+
+
+      <!-- =========================================
+           FOOTER
+      ========================================== -->
+      <footer class="footer">
+
+        <span data-i18n="footer">
+          Built for smarter local retail.
+        </span>
+
+        <span data-i18n="footerdemo">
+          Prototype dashboard · Sample data
+        </span>
+
+      </footer>
+
+    </main>
+
+  </div>
+
+
+  <!-- =========================================
+       JAVASCRIPT FILES
+
+       IMPORTANT:
+       api.js loads backend information first.
+       app.js contains the dashboard functionality.
+  ========================================== -->
+
+ <script src="./js/api.js"></script>
+ <script src="./js/app.js"></script>
+
+</body>
+</html>
