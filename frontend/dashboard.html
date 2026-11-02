@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101713">
+  <meta name="description" content="Demand forecasting, stock planning, and pricing for local retailers.">
+  <script>if (location.port !== "8000") location.replace("http://127.0.0.1:8000/");</script>
+  <title>RetailAI — Store intelligence</title>
+  <link rel="stylesheet" href="/static/rebuild.css">
+  <script defer src="/static/rebuild.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="#top"><span class="brand-mark">R</span><span>retail<span class="brand-light">ai</span><small>STORE INTELLIGENCE</small></span></a>
+      <div class="store-switch"><span class="store-avatar">M</span><span><b>My Market</b><small>Neighbourhood store</small></span><span class="chevron">⌄</span></div>
+      <p class="nav-label">WORKSPACE</p>
+      <nav class="nav">
+        <a class="nav-item active" href="#top"><span>◫</span> Overview</a>
+        <a class="nav-item" href="#forecast"><span>⌁</span> Demand advisor</a>
+        <a class="nav-item" href="#inventory"><span>▦</span> Inventory</a>
+        <a class="nav-item" href="#sales"><span>↥</span> Sales & imports</a>
+        <a class="nav-item" href="#analytics"><span>⌁</span> Sales trends</a>
+        <a class="nav-item" href="#festivalInsights"><span>✳</span> Festival insights</a>
+      </nav>
+      <div class="sidebar-bottom"><span class="online-dot" id="connectionDot"></span><div><b id="connectionTitle">Connecting to store data</b><small id="connectionDetail">Checking database…</small></div></div>
+    </aside>
+
+    <main class="main" id="top">
+      <header class="topbar"><div class="mobile-brand">retail<span>ai</span></div><div class="breadcrumbs">YOUR STORE <span>/</span> OVERVIEW</div><div class="topbar-right"><select class="language-select" id="languageSelect" aria-label="Choose language" title="Choose language"><option value="en">EN</option><option value="hi">हिन्दी</option><option value="mr">मराठी</option></select><span class="date-pill" id="today"></span><button class="icon-button" id="refreshBtn" title="Refresh data" aria-label="Refresh data">↻</button><span class="user-avatar">P</span></div></header>
+
+      <section class="welcome-row"><div><p class="overline">MONDAY MORNING, RETAILER</p><h1>Make today’s stock<br class="desktop-break"> work smarter.</h1><p class="welcome-copy">A clear view of sales, demand, and your next best move.</p></div><div class="welcome-art" aria-hidden="true"><span class="art-sun"></span><span class="art-block block-one"></span><span class="art-block block-two"></span><span class="art-block block-three"></span><span class="art-line"></span></div></section>
+
+      <section class="metric-grid" aria-label="Store overview">
+        <article class="metric-card"><div class="metric-head"><span>SALES · 14 DAYS</span><span class="metric-icon coral">₹</span></div><strong id="metricRevenue">—</strong><small id="metricRevenueNote">Import sales to see revenue</small><div class="mini-bars" id="revenueBars" aria-label="Daily revenue trend"></div></article>
+        <article class="metric-card"><div class="metric-head"><span>UNITS SOLD · 14 DAYS</span><span class="metric-icon blue">↗</span></div><strong id="metricUnits">—</strong><small>Units recorded in your sales history</small><div class="metric-foot"><span class="tiny-dot blue-dot"></span>From saved transactions</div></article>
+        <article class="metric-card"><div class="metric-head"><span>PRODUCTS TRACKED</span><span class="metric-icon violet">▦</span></div><strong id="metricProducts">—</strong><small>Products in your store inventory</small><div class="metric-foot"><span class="tiny-dot violet-dot"></span>Inventory is database-backed</div></article>
+        <article class="metric-card"><div class="metric-head"><span>REPLENISHMENT WATCH</span><span class="metric-icon amber">!</span></div><strong id="metricLowStock">—</strong><small>Products with 3 days or less of cover</small><a class="text-link" href="#inventory">Review inventory <span>↗</span></a></article>
+      </section>
+
+      <section class="signal-row" aria-label="Demand intelligence features">
+        <article class="signal feature-festival"><div class="signal-symbol">✳</div><div><span class="signal-label">FESTIVAL & SEASONAL PULSE</span><strong id="festivalPulse">Finding the next demand window…</strong><small>Calendar signals help you plan earlier.</small></div></article>
+        <article class="signal feature-weather"><div class="signal-symbol">☼</div><div><span class="signal-label">OPTIONAL WEATHER INPUT</span><strong>Adjust a forecast for local conditions</strong><small>Add temperature or rainfall in the demand advisor.</small></div></article>
+        <article class="signal feature-risk"><div class="signal-symbol">◉</div><div><span class="signal-label">SMART STOCK RISK</span><strong id="riskPulse">Waiting for product data</strong><small id="riskPulseNote">Stockout and excess stock risk by product.</small></div></article>
+      </section>
+
+      <section class="content-grid">
+        <article class="panel sales-panel"><div class="panel-title"><div><span class="overline">PERFORMANCE</span><h2>Sales pulse</h2><p>Saved revenue and units by day</p></div><span class="period-chip">LAST 14 DAYS</span></div><div class="chart-wrap"><div class="chart-y"><span>₹ max</span><span>₹ 0</span></div><div class="chart" id="salesChart" role="img" aria-label="Daily sales revenue chart"></div></div><div class="chart-legend"><span><i class="legend-dot revenue-color"></i>Revenue</span><span><i class="legend-dot units-color"></i>Units sold</span></div></article>
+        <article class="panel actions-panel"><div class="panel-title"><div><span class="overline">TODAY’S OPPORTUNITY</span><h2>Worth a look</h2><p>Recommendations from your store data</p></div><span class="spark">✦</span></div><div id="actionList" class="action-list"><div class="empty-state">Loading your store’s next actions…</div></div><a class="panel-link" href="#forecast">Open demand advisor <span>→</span></a></article>
+      </section>
+
+      <section class="panel analytics-panel" id="analytics">
+        <div class="panel-title"><div><span class="overline">SALES INTELLIGENCE</span><h2>Daily & monthly sales trends</h2><p>Compare recorded units and revenue across time.</p></div><div class="trend-switch"><button class="trend-button active" id="dailyTrendBtn" type="button">Daily · 30 days</button><button class="trend-button" id="monthlyTrendBtn" type="button">Monthly · 12 months</button></div></div>
+        <div class="trend-legend"><span><i class="legend-dot revenue-color"></i>Revenue</span><span><i class="legend-dot units-color"></i>Units sold</span></div>
+        <div class="trend-chart" id="trendChart" role="img" aria-label="Daily and monthly sales trend"></div>
+      </section>
+
+      <section class="content-grid movers-grid" aria-label="Product sales rankings">
+        <article class="panel movers-panel"><div class="panel-title"><div><span class="overline">TOP PERFORMERS · 90 DAYS</span><h2>Best-selling products</h2><p>Ranked by units sold, with revenue shown.</p></div><span class="metric-icon green">↗</span></div><div class="rank-list" id="bestSellers"><div class="empty-state">Loading product sales…</div></div></article>
+        <article class="panel movers-panel"><div class="panel-title"><div><span class="overline">NEEDS ATTENTION · 90 DAYS</span><h2>Lowest-selling products</h2><p>Includes items with no recorded sales.</p></div><span class="metric-icon amber">↓</span></div><div class="rank-list" id="lowestSellers"><div class="empty-state">Loading product sales…</div></div></article>
+      </section>
+
+      <section class="panel festival-panel" id="festivalInsights"><div class="panel-title"><div><span class="overline">PLAN AHEAD</span><h2>Upcoming festival insights</h2><p>Check supplier lead time and place orders before demand windows.</p></div><span class="period-chip">NEXT 120 DAYS</span></div><div class="festival-list" id="festivalList"><div class="empty-state">Checking the festival calendar…</div></div><p class="method-note" id="festivalNote">Approximate retail calendar. Confirm local festival dates and supplier schedules.</p></section>
+      <section class="panel festival-planner" id="festivalPlanner"><div class="planner-heading"><div><span class="overline">YOUR STORE · YOUR BUDGET</span><h2>Festival Basket Planner</h2><p>Turn a local event into a supplier-ready order plan that respects your budget and available space.</p></div><span class="planner-emblem">✳</span></div><form id="festivalPlanForm" class="planner-form"><label>Festival or local event<input id="planFestivalName" maxlength="100" required placeholder="e.g. Ganesh Chaturthi"></label><label>Event date<input id="planFestivalDate" type="date" required></label><label>Purchase budget (₹)<input id="planBudget" type="number" min="0" step="100" value="25000" required></label><label>Extra storage available (units)<input id="planStorage" type="number" min="0" step="1" value="300" required></label><button class="button button-dark" type="submit">Build my basket <span>→</span></button></form><p id="festivalPlanMessage" class="form-message" aria-live="polite"></p><div id="festivalPlanOutput" class="planner-output"><div class="planner-empty"><b>Your order plan will appear here</b><small>Choose an event, budget, and storage limit.</small></div></div></section>
+
+      <section class="panel advisor-panel" id="forecast"><div class="section-intro"><div><span class="overline">PLAN WITH CONTEXT</span><h2>Demand advisor</h2><p>Combine trained sales patterns with calendar and weather signals. See what changed and why.</p></div><span class="model-tag"><i></i> ML FORECAST</span></div>
+        <form id="forecastForm" class="advisor-form">
+          <label>Product<select id="forecastProduct" required><option value="">Loading products…</option></select></label>
+          <label>Planning horizon<select id="forecastDays"><option value="7">Next 7 days</option><option value="14" selected>Next 14 days</option><option value="30">Next 30 days</option></select></label>
+          <label>Temperature °C <span>optional</span><input id="temperature" type="number" min="-20" max="60" placeholder="e.g. 32"></label>
+          <label>Rainfall mm/day <span>optional</span><input id="rain" type="number" min="0" max="500" placeholder="e.g. 12"></label>
+          <button class="button button-dark" type="submit">Build forecast <span>→</span></button>
+        </form>
+        <div class="forecast-output" id="forecastOutput"><div class="forecast-empty"><span>⌁</span><b>Your forecast will appear here</b><small>Select a product and build your first forecast.</small></div></div>
+        <p class="method-note">Forecasts are transparent estimates, not guaranteed results. Festival dates are approximate; weather is manually supplied. Add sales history to improve product estimates.</p>
+      </section>
+
+      <section class="panel inventory-panel" id="inventory"><div class="panel-title inventory-title"><div><span class="overline">STOCK CONTROL</span><h2>Inventory</h2><p>Monitor coverage, risk, and replenishment suggestions.</p></div><div class="inventory-actions"><input id="inventorySearch" class="search" type="search" placeholder="Search inventory" aria-label="Search inventory"><button class="button button-outline" id="addProductBtn" type="button">＋ Add product</button></div></div>
+        <div id="productFormWrap" class="product-form-wrap hidden"><form id="productForm" class="product-form"><label>Product name<input name="name" maxlength="100" required placeholder="e.g. Lentils"></label><label>On-hand units<input name="stock" type="number" min="0" required value="0"></label><label>Avg. daily demand<input name="daily_demand" type="number" min="0.1" step="0.1" required value="1"></label><label>Supplier lead time (days)<input name="supplier_lead_time_days" type="number" min="0" max="365" required value="3"></label><label>Holding cost / unit / day (₹)<input name="holding_cost_per_unit_day" type="number" min="0" step="0.01" required value="0.5"></label><label>Sell price (₹)<input name="selling_price" type="number" min="0.01" step="0.01" required></label><label>Unit cost (₹)<input name="unit_cost" type="number" min="0.01" step="0.01" required></label><div class="form-buttons"><button class="button button-dark" type="submit">Save product</button><button class="button button-outline" id="cancelProductBtn" type="button">Cancel</button></div></form></div><p id="productMessage" class="form-message" aria-live="polite"></p>
+        <div class="table-scroll"><table><thead><tr><th>PRODUCT</th><th>ON HAND</th><th>DAILY DEMAND</th><th>DAYS OF COVER</th><th>LEAD TIME</th><th>HOLDING COST / DAY</th><th>STOCK RISK</th><th>PRICE / COST</th><th></th></tr></thead><tbody id="productRows"><tr><td colspan="9" class="empty-state">Loading inventory…</td></tr></tbody></table></div><div class="stockout-history"><div class="stockout-history-head"><b>Recent availability notes</b><small>Stockout days help correct your demand history.</small></div><div id="stockoutHistory" class="stockout-history-list"><span class="empty-state">No stockout notes yet.</span></div></div><p id="inventoryMessage" class="form-message" aria-live="polite"></p>
+      </section>
+
+      <dialog id="productEditDialog" class="edit-dialog"><form id="productEditForm"><div class="panel-title"><div><span class="overline">INVENTORY EDITOR</span><h2 id="productEditTitle">Edit product</h2><p>Update stock, demand, and price/cost assumptions.</p></div><button class="icon-button" id="closeProductEditBtn" type="button" aria-label="Close">×</button></div><div class="edit-grid"><label>On-hand units<input name="stock" type="number" min="0" step="1" required></label><label>Average daily demand<input name="daily_demand" type="number" min="0.1" step="0.1" required></label><label>Supplier lead time (days)<input name="supplier_lead_time_days" type="number" min="0" max="365" step="1" required></label><label>Holding cost / unit / day (₹)<input name="holding_cost_per_unit_day" type="number" min="0" step="0.01" required></label><label>Selling price (₹)<input name="selling_price" type="number" min="0.01" step="0.01" required></label><label>Unit cost (₹)<input name="unit_cost" type="number" min="0.01" step="0.01" required></label></div><div class="form-buttons"><button class="button button-dark" type="submit">Save changes</button><button class="button button-outline" id="cancelProductEditBtn" type="button">Cancel</button></div><p id="productEditMessage" class="form-message" aria-live="polite"></p></form></dialog>
+
+      <section class="content-grid sales-tools" id="sales"><article class="panel sale-entry"><div class="panel-title"><div><span class="overline">QUICK ENTRY</span><h2>Record a sale</h2><p>Sales entries immediately update forecasts.</p></div></div><form id="saleForm" class="sale-form"><label>Product<select id="saleProduct" required></select></label><div class="form-inline"><label>Sale date<input id="saleDate" type="date" required></label><label>Units<input id="saleQuantity" type="number" min="1" step="1" value="1" required></label></div><label>Unit selling price (₹)<input id="salePrice" type="number" min="0.01" step="0.01" required></label><button class="button button-dark" type="submit">Save sale</button></form><p id="saleMessage" class="form-message" aria-live="polite"></p></article>
+        <article class="panel import-panel"><div class="panel-title"><div><span class="overline">HISTORY IMPORT</span><h2>Bring your sales history</h2><p>Upload CSV to get product-level demand forecasts.</p></div><span class="import-icon">↥</span></div><div class="drop-area"><div><b>Choose a sales CSV</b><small>Columns: date, product, quantity, price</small><small>Missing products are added automatically. New items start at 0 stock; estimated cost is editable in inventory.</small></div><input type="file" id="csvFile" accept=".csv,text/csv"></div><div class="import-actions"><button class="button button-outline" id="templateBtn" type="button">Download template</button><button class="button button-dark" id="uploadCsvBtn" type="button" disabled>Import rows</button></div><p id="importMessage" class="form-message" aria-live="polite"></p></article></section>
+
+      <section class="panel history-panel"><div class="panel-title"><div><span class="overline">RECENT ACTIVITY</span><h2>Sales history</h2><p>Most recent saved transactions</p></div><span class="period-chip">LATEST 12</span></div><div class="table-scroll"><table><thead><tr><th>DATE</th><th>PRODUCT</th><th>UNITS</th><th>UNIT PRICE</th><th>REVENUE</th></tr></thead><tbody id="salesRows"><tr><td colspan="5" class="empty-state">Loading sales history…</td></tr></tbody></table></div></section>
+
+      <section class="why-panel"><div class="why-heading"><div><span class="overline">MADE FOR NEIGHBOURHOOD RETAIL</span><h2>From sales entries to confident store decisions</h2></div><span class="period-chip">RETAILAI ADVANTAGE</span></div><div class="why-grid"><article><b>Plans around your calendar</b><p>Festival demand and supplier deadlines become an order list tied to your budget and storage.</p></article><article><b>Learns what stockouts hide</b><p>Mark unavailable days so limited supply does not look like weak customer demand.</p></article><article><b>Explains every suggestion</b><p>See the sales pattern, lead time, risk, and margin behind each recommendation.</p></article><article><b>Fits how local shops work</b><p>Use familiar Hindi or Marathi, quick sales entry, and simple inventory controls.</p></article></div></section>
+      <footer class="footer"><span>RETAILAI <i>·</i> SMARTER LOCAL COMMERCE</span><span>Decision support for your neighbourhood store.</span></footer>
+    </main>
+  </div>
+  <dialog id="stockoutDialog" class="edit-dialog"><form id="stockoutForm"><div class="panel-title"><div><span class="overline">DEMAND MEMORY</span><h2 id="stockoutTitle">Report a stockout</h2><p>Keep an unavailable day from looking like a day with no demand.</p></div><button class="icon-button" id="closeStockoutBtn" type="button" aria-label="Close">×</button></div><input name="product_id" type="hidden"><div class="edit-grid"><label>Unavailable date<input name="stockout_date" type="date" required></label><label>Estimated lost units <span>optional</span><input name="estimated_lost_units" type="number" min="0" step="1" placeholder="Leave blank if unknown"></label><label class="edit-note">Note <span>optional</span><input name="note" maxlength="240" placeholder="e.g. supplier delivery delayed"></label></div><p class="method-note">With no lost-unit estimate, this date is excluded from model training and recent-demand lags are imputed. Existing inventory and sales records are not changed.</p><div class="form-buttons"><button class="button button-dark" type="submit">Save stockout note</button><button class="button button-outline" id="cancelStockoutBtn" type="button">Cancel</button></div><p id="stockoutMessage" class="form-message" aria-live="polite"></p></form></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

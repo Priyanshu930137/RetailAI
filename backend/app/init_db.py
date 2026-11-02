@@ -1,7 +1,7 @@
 
-from app.database import Base, engine
-from app import models
+from app.fresh_app import initialize
 
-Base.metadata.create_all(bind=engine)
 
-print("RetailAI database and tables created successfully.")
+if __name__ == "__main__":
+    initialize()
+    print("RetailAI database initialized; existing records were retained.")

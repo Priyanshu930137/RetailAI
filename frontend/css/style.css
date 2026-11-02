@@ -378,6 +378,21 @@ a:focus-visible {
   scroll-margin-top: 22px;
 }
 
+.signal-panel { margin-bottom: 22px; padding: 24px; overflow: hidden; }
+.signal-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+.signal-heading h3 { font-size: 17px; margin-bottom: 4px; }
+.signal-cta { display: inline-flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; white-space: nowrap; }
+.signal-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.signal-card { min-width: 0; display: flex; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: 11px; background: #fcfcff; }
+.signal-icon { flex: 0 0 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; font-size: 18px; background: #efebff; color: var(--primary); }
+.signal-weather .signal-icon { background: #fff3df; color: #bd771a; }
+.signal-risk .signal-icon { background: #e5f7ef; color: #16845b; }
+.signal-label { color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: 1px; margin-bottom: 5px; }
+.signal-card strong { display: block; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.signal-card .muted { margin-top: 5px; font-size: 10px; }
+@media (max-width: 950px) { .signal-grid { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .signal-panel { padding: 17px 13px; } .signal-heading { align-items: flex-start; flex-direction: column; } }
+
 /* Forms */
 
 .form-grid {
@@ -460,6 +475,19 @@ a:focus-visible {
   border: 1px solid #eeebff;
   border-radius: 11px;
 }
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.insight-grid .metric-box p:last-child { font-size: 11px; overflow-wrap: anywhere; }
+.insight-grid .metric-box h2 { font-size: 20px; margin: 7px 0; }
+
+@media (max-width: 900px) { .insight-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .insight-grid { grid-template-columns: 1fr; } }
 
 .result-box h2 {
   color: var(--primary-dark);

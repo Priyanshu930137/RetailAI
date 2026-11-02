@@ -130,7 +130,7 @@ const translations = {
     planning: "PLANNING TOOL",
     forecasttitle: "Demand Forecast Preview",
     forecastdesc:
-      "Estimate future demand using a simple historical average.",
+      "See forecasts shaped by sales history, seasonal patterns, festivals, and optional local weather.",
     product: "Product",
     horizon: "Forecast period",
     generate: "Generate Forecast",
@@ -227,7 +227,7 @@ const translations = {
     planning: "योजना उपकरण",
     forecasttitle: "मांग अनुमान का पूर्वावलोकन",
     forecastdesc:
-      "पिछली औसत मांग से भविष्य की मांग का अनुमान लगाएँ।",
+      "बिक्री इतिहास, मौसमी पैटर्न, त्योहारों और वैकल्पिक स्थानीय मौसम से मांग का अनुमान देखें।",
     product: "उत्पाद",
     horizon: "अनुमान अवधि",
     generate: "अनुमान बनाएँ",
@@ -773,7 +773,69 @@ if (inventorySearch) {
    8. DEMAND FORECAST
 ========================================= */
 
-function updateForecast() {
+function buildLocalForecast(product, history, days, temperature, rain) {
+  const base = history.length
+    ? history.reduce((sum, value) => sum + value, 0) / history.length
+    : product.daily;
+  let weatherFactor = 1;
+  if (temperature !== "" && Number(temperature) >= 32) weatherFactor *= 1.08;
+  if (temperature !== "" && Number(temperature) <= 10) weatherFactor *= 0.95;
+  if (rain !== "" && Number(rain) >= 10) weatherFactor *= 0.94;
+  const today = new Date();
+  const festivals = [
+    { month: 0, day: 14, name: "Makar Sankranti", factor: 1.18 },
+    { month: 2, day: 14, name: "Holi", factor: 1.20 },
+    { month: 7, day: 15, name: "Independence Day", factor: 1.08 },
+    { month: 9, day: 20, name: "Diwali season", factor: 1.30 },
+    { month: 10, day: 14, name: "Festive season", factor: 1.12 },
+    { month: 11, day: 25, name: "Christmas", factor: 1.16 }
+  ];
+  const seasonFactor = (month) => [2, 3, 4, 5].includes(month) ? 1.03
+    : [6, 7, 8].includes(month) ? 0.98
+      : [9, 10].includes(month) ? 1.04 : 1;
+  const seasonName = (month) => [2, 3, 4, 5].includes(month) ? "Summer"
+    : [6, 7, 8].includes(month) ? "Monsoon"
+      : [9, 10].includes(month) ? "Festive season" : "Winter";
+  const events = new Set();
+  const seasons = new Set();
+  const forecast = Array.from({ length: days }, (_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() + index + 1);
+    const event = festivals.find((item) => item.month === date.getMonth() && Math.abs(item.day - date.getDate()) <= 7);
+    if (event) events.add(event.name);
+    seasons.add(seasonName(date.getMonth()));
+    return {
+      date: date.toISOString().slice(0, 10),
+      units: Number((base * weatherFactor * seasonFactor(date.getMonth()) * (event?.factor || 1)).toFixed(2))
+    };
+  });
+  const total = forecast.reduce((sum, point) => sum + point.units, 0);
+  const target = Math.ceil(total * 1.1);
+  const cover = product.stock / Math.max(base, 0.1);
+  const stockout = Math.min(100, Math.max(0, Math.round(100 * (1 - cover / days))));
+  const overstock = Math.min(100, Math.max(0, Math.round(100 * (product.stock - target) / Math.max(target, 1))));
+  const demandFactor = (total / days) / Math.max(base, 0.1);
+  const suggestedPrice = Math.max(product.cost * 1.05, product.price * (1 + Math.min(0.08, Math.max(-0.05, (demandFactor - 1) * 0.35))));
+  const explanation = [history.length ? "Baseline uses the recent local demand profile" : "No sales loaded; baseline uses the product daily-demand estimate"];
+  if (events.size) explanation.push("Festival uplift: " + [...events].join(", "));
+  if (temperature !== "" || rain !== "") explanation.push("Weather heuristic uses the manually entered temperature and rainfall");
+  return {
+    daily_average: total / days,
+    total_demand: total,
+    forecast,
+    festival_events: [...events],
+    seasonal_context: [...seasons],
+    stock_risk: { score: stockout, level: stockout >= 70 ? "high" : stockout >= 35 ? "medium" : "low", days_of_cover: Number(cover.toFixed(1)) },
+    overstock_risk: { score: overstock, excess_units: Math.max(0, product.stock - target) },
+    recommended_replenishment: Math.max(0, target - product.stock),
+    pricing: { suggested_price: Number(suggestedPrice.toFixed(2)), gross_margin: Number((((suggestedPrice - product.cost) / Math.max(suggestedPrice, 0.01)) * 100).toFixed(1)) },
+    explanation,
+    confidence: "low · local estimate",
+    method: "transparent local heuristic"
+  };
+}
+
+async function updateForecast() {
   const productSelect =
     $("forecastProduct");
 
@@ -793,8 +855,26 @@ function updateForecast() {
   const days =
     Number(daysSelect.value);
 
-  const history =
-    historicalDemand[productName];
+  const history = historicalDemand[productName] || [];
+  const productRecord = products.find((item) => item.name === productName);
+  if (!productRecord) return;
+  let apiForecast = null;
+  const temperature = $("forecastTemperature")?.value;
+  const rain = $("forecastRain")?.value;
+  const params = new URLSearchParams({ days: String(days) });
+  if (temperature !== "") params.set("temperature_c", temperature);
+  if (rain !== "") params.set("rain_mm", rain);
+  if (productRecord.id) {
+    try {
+      const response = await fetch(API_BASE_URL + "/api/forecast/" + productRecord.id + "?" + params);
+      if (response.ok) apiForecast = await response.json();
+    } catch (error) {
+      console.info("Forecast API unavailable; using local estimate.", error);
+    }
+  }
+  if (!apiForecast) {
+    apiForecast = buildLocalForecast(productRecord, history, days, temperature, rain);
+  }
 
   const forecastTotal =
     $("forecastTotal");
@@ -806,7 +886,6 @@ function updateForecast() {
     $("forecastNote");
 
   if (
-    !history ||
     ![7, 14, 30].includes(days)
   ) {
     if (forecastTotal) {
@@ -827,17 +906,9 @@ function updateForecast() {
     return;
   }
 
-  const average =
-    history.reduce(
-      (sum, value) =>
-        sum + value,
-      0
-    ) / history.length;
+  const average = apiForecast.daily_average;
 
-  const total =
-    Math.ceil(
-      average * days
-    );
+  const total = apiForecast.total_demand;
 
   if (forecastTotal) {
     forecastTotal.textContent =
@@ -850,8 +921,26 @@ function updateForecast() {
   }
 
   if (forecastNote) {
-    forecastNote.textContent =
-      t("forecastnote");
+    forecastNote.textContent = "Confidence: " + apiForecast.confidence + ". " + apiForecast.method + ".";
+  }
+
+  if (apiForecast) {
+    $("stockRiskValue").textContent = "Stockout " + apiForecast.stock_risk.score + "/100 · Overstock " + apiForecast.overstock_risk.score + "/100";
+    $("stockRiskNote").textContent = apiForecast.stock_risk.days_of_cover + " days cover · " + apiForecast.overstock_risk.excess_units + " excess units vs target";
+    $("replenishmentValue").textContent = number(apiForecast.recommended_replenishment) + " units";
+    $("suggestedPriceValue").textContent = money(apiForecast.pricing.suggested_price);
+    $("priceReason").textContent = apiForecast.pricing.gross_margin + "% gross margin · demand signal considered · cost floor applied.";
+    $("forecastExplanation").textContent = apiForecast.explanation.concat((apiForecast.seasonal_context || []).map((name) => "Season: " + name), apiForecast.festival_events.map((name) => "Festival window: " + name)).join(". ");
+    const seasonalNames = apiForecast.seasonal_context || [];
+    const calendarSignals = seasonalNames.concat(apiForecast.festival_events);
+    $("festivalSummary").textContent = calendarSignals.length
+      ? [...new Set(calendarSignals)].join(" · ") + " forecast signals"
+      : "No seasonal or festival signal in this window";
+    $("weatherSummary").textContent = temperature !== "" || rain !== ""
+      ? (temperature !== "" ? temperature + "°C" : "Temperature not set") + " · " + (rain !== "" ? rain + " mm rain" : "rain not set")
+      : "Add local conditions in the demand advisor";
+    $("riskSummary").textContent = "Stockout " + apiForecast.stock_risk.level + " · Overstock " + apiForecast.overstock_risk.level;
+    $("riskSummaryNote").textContent = apiForecast.stock_risk.days_of_cover + " days cover for " + productName + "; replenish " + apiForecast.recommended_replenishment + " units";
   }
 
   const forecastCanvas =
@@ -893,12 +982,7 @@ function updateForecast() {
                   ? "अनुमानित दैनिक मांग"
                   : "Estimated daily demand",
 
-              data:
-                Array(days).fill(
-                  Number(
-                    average.toFixed(2)
-                  )
-                ),
+              data: apiForecast.forecast.map((point) => point.units),
 
               borderColor:
                 "#6654e8",
@@ -940,6 +1024,9 @@ $("forecastDays")
     "change",
     updateForecast
   );
+
+$("forecastTemperature")?.addEventListener("change", updateForecast);
+$("forecastRain")?.addEventListener("change", updateForecast);
 
 
 /* =========================================
@@ -1776,6 +1863,9 @@ if (saveCsvButton) {
           "success"
         );
 
+        // Pull the saved history into the currently displayed forecast.
+        await updateForecast();
+
         /*
           Clear temporary records to
           prevent accidental duplicates.
@@ -2016,6 +2106,19 @@ async function loadProductsFromAPI() {
           })
         );
 
+    const forecastSelect = $("forecastProduct");
+    if (forecastSelect && products.length) {
+      const selected = forecastSelect.value;
+      forecastSelect.replaceChildren(...products.map((item) => {
+        const option = document.createElement("option");
+        option.value = item.name;
+        option.textContent = item.name;
+        return option;
+      }));
+      if (products.some((item) => item.name === selected)) forecastSelect.value = selected;
+      updateForecast();
+    }
+
     const searchValue =
       $("inventorySearch")
         ?.value || "";
@@ -2095,6 +2198,11 @@ document.addEventListener(
   "retailAIDataLoaded",
   () => {
     console.log("RetailAI API data loaded.");
+    const connected = Boolean(window.retailAI?.health?.status === "healthy");
+    if ($("backendStatusText")) $("backendStatusText").textContent = connected ? "API connected" : "Local estimate mode";
+    if ($("backendStatusDetail")) $("backendStatusDetail").textContent = connected ? "Sales and forecasts are synced" : "Start the API for saved sales data";
+    const statusDot = document.querySelector(".status-dot");
+    if (statusDot) statusDot.style.background = connected ? "#16845b" : "#e3a34d";
 
     if (
       window.retailAI &&
