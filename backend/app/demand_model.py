@@ -11,7 +11,8 @@ from datetime import date, timedelta
 import math
 
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import ExtraTreesRegressor, HistGradientBoostingRegressor, RandomForestRegressor
+from sklearn.inspection import permutation_importance
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from app.forecasting import FESTIVALS
@@ -21,7 +22,9 @@ FEATURES = (
     "product_id", "dow_sin", "dow_cos", "year_sin", "year_cos", "month",
     "is_weekend", "is_festival_window", "festival_uplift", "is_summer",
     "is_monsoon", "is_slow_season", "is_peak_season", "lag_1", "lag_7", "mean_7",
-    "mean_28", "mean_56",
+    "mean_28", "mean_56", "lag_14", "lag_28", "median_28",
+    "std_28", "trend_7_vs_28", "same_weekday_mean", "weather_max_temp_c",
+    "weather_precipitation_mm", "weather_data_available",
 )
 
 
@@ -31,13 +34,15 @@ def _calendar(day: date) -> tuple[bool, float]:
     return bool(matches), max(matches, default=1.0)
 
 
-def _features(product_id: int, day: date, history: list[float]) -> list[float]:
+def _features(product_id: int, day: date, history: list[float], weather_by_date=None) -> list[float]:
     festival, uplift = _calendar(day)
     year_phase = 2 * math.pi * day.timetuple().tm_yday / 365.25
     weekday_phase = 2 * math.pi * day.weekday() / 7
     def mean(n: int) -> float:
         values = history[-n:]
         return float(np.mean(values)) if values else 0.0
+    week_day_sales = [history[-lag] for lag in (7, 14, 21, 28) if len(history) >= lag]
+    recent = history[-28:]
     return [float(product_id), math.sin(weekday_phase), math.cos(weekday_phase),
             math.sin(year_phase), math.cos(year_phase), float(day.month),
             float(day.weekday() >= 5), float(festival), uplift,
@@ -45,10 +50,19 @@ def _features(product_id: int, day: date, history: list[float]) -> list[float]:
             float(day.month in (1, 2, 7, 8, 9)), float(day.month in (10, 11, 12)),
             history[-1] if history else 0.0,
             history[-7] if len(history) >= 7 else mean(7),
-            mean(7), mean(28), mean(56)]
+            mean(7), mean(28), mean(56),
+            history[-14] if len(history) >= 14 else mean(14),
+            history[-28] if len(history) >= 28 else mean(28),
+            float(np.median(recent)) if recent else 0.0,
+            float(np.std(recent)) if recent else 0.0,
+            mean(7) - mean(28),
+            float(np.mean(week_day_sales)) if week_day_sales else mean(28),
+            float((weather_by_date or {}).get(day, {}).get("temperature_max_c") or 0),
+            float((weather_by_date or {}).get(day, {}).get("precipitation_mm") or 0),
+            float(day in (weather_by_date or {}))]
 
 
-def prepare_training_data(sales, product_ids: dict[str, int], stockouts=()):
+def prepare_training_data(sales, product_ids: dict[str, int], stockouts=(), weather_by_date=None):
     """Aggregate sales into demand days; censor unestimated stockout labels."""
     by_product: dict[str, dict[date, int]] = defaultdict(lambda: defaultdict(int))
     for row in sales:
@@ -72,7 +86,7 @@ def prepare_training_data(sales, product_ids: dict[str, int], stockouts=()):
         history: list[float] = []
         current = first
         while current <= last:
-            feature = _features(product_ids[name], current, history)
+            feature = _features(product_ids[name], current, history, weather_by_date)
             sales_units = float(daily_sales.get(current, 0))
             key = (name, current)
             if key in stockout_map and stockout_map[key] is None:
@@ -91,52 +105,102 @@ def prepare_training_data(sales, product_ids: dict[str, int], stockouts=()):
     return np.asarray(rows, dtype=float), np.asarray(targets, dtype=float), dates, recorded_targets, len(stockout_map)
 
 
-def fit_demand_model(sales, products, stockouts=()):
-    """Train once so planners can forecast the whole product basket efficiently."""
+def fit_demand_model(sales, products, stockouts=(), weather_by_date=None):
+    """Choose the most accurate time-validated shared model or seasonal baseline."""
     ids = {item.name: item.id for item in products}
-    x, y, dates, recorded_rows, adjusted_stockout_days = prepare_training_data(sales, ids, stockouts)
-    result = {"available": False, "model": "RandomForestRegressor", "training_rows": int(len(y)),
+    weather_by_date = weather_by_date or {}
+    weather_join_days = {row.sale_date for row in sales if row.sale_date in weather_by_date}
+    weather_enabled = len(weather_join_days) >= 30
+    if not weather_enabled:
+        weather_by_date = {}
+    x, y, dates, recorded_rows, adjusted_stockout_days = prepare_training_data(sales, ids, stockouts, weather_by_date)
+    result = {"available": False, "model": "SeasonalMeanBaseline", "training_rows": int(len(y)),
               "evaluation": None, "feature_importance": [], "reason": None,
-              "stockout_days_adjusted": adjusted_stockout_days, "fitted_model": None}
+              "stockout_days_adjusted": adjusted_stockout_days, "fitted_model": None,
+              "weather_features_enabled": weather_enabled}
     if len(y) < 60 or recorded_rows < 30 or len(set(dates)) < 14:
         result["reason"] = "At least 30 recorded product-days, 60 usable training rows, and 14 distinct dates are required."
         return result
-    cutoff = max(1, min(len(y) - 1, int(len(y) * 0.8)))
-    order = np.argsort(np.asarray(dates, dtype="datetime64[D]"), kind="stable")
-    train_ix, test_ix = order[:cutoff], order[cutoff:]
-    if len(test_ix) < 5:
+    unique_dates = sorted(set(dates))
+    split_at = max(1, min(len(unique_dates) - 1, int(len(unique_dates) * .8)))
+    holdout_start = unique_dates[split_at]
+    train_ix = np.asarray([i for i, day in enumerate(dates) if day < holdout_start], dtype=int)
+    test_ix = np.asarray([i for i, day in enumerate(dates) if day >= holdout_start], dtype=int)
+    if len(test_ix) < 5 or len(train_ix) < 10:
         result["reason"] = "There are too few chronological holdout rows to evaluate the model."
         return result
-    def model():
-        return RandomForestRegressor(n_estimators=160, min_samples_leaf=2,
-                                     max_features=0.9, random_state=42, n_jobs=1)
-    evaluator = model().fit(x[train_ix], y[train_ix])
-    predicted = np.maximum(0, evaluator.predict(x[test_ix]))
+
+    def seasonal_baseline(features):
+        return np.maximum(0, features[:, FEATURES.index("mean_7")])
+
+    seasonal_pred = seasonal_baseline(x[test_ix])
+    seasonal_mae = float(mean_absolute_error(y[test_ix], seasonal_pred))
+    mean_pred = np.repeat(float(np.mean(y[train_ix])), len(test_ix))
+    mean_mae = float(mean_absolute_error(y[test_ix], mean_pred))
+    factories = [
+        ("RandomForestRegressor", lambda: RandomForestRegressor(n_estimators=180, min_samples_leaf=2,
+            max_features=0.9, random_state=42, n_jobs=1)),
+        ("ExtraTreesRegressor", lambda: ExtraTreesRegressor(n_estimators=180, min_samples_leaf=2,
+            max_features=0.9, random_state=42, n_jobs=1)),
+        ("HistGradientBoostingRegressor", lambda: HistGradientBoostingRegressor(max_iter=140,
+            max_leaf_nodes=15, l2_regularization=2.0, learning_rate=0.06, random_state=42)),
+    ]
+    winner_name = "SevenDaySeasonalBaseline"
+    winner_factory = None
+    winner_mae = seasonal_mae
+    winner_eval_model = None
+    for name, factory in factories:
+        candidate = factory().fit(x[train_ix], y[train_ix])
+        prediction = np.maximum(0, candidate.predict(x[test_ix]))
+        candidate_mae = float(mean_absolute_error(y[test_ix], prediction))
+        if candidate_mae < winner_mae:
+            winner_name, winner_factory, winner_mae = name, factory, candidate_mae
+            winner_eval_model = candidate
+
+    predicted = seasonal_pred if winner_factory is None else np.maximum(0, winner_eval_model.predict(x[test_ix]))
     actual = y[test_ix]
-    mae = float(mean_absolute_error(actual, predicted))
     rmse = float(math.sqrt(mean_squared_error(actual, predicted)))
     denom = float(np.sum(np.abs(actual)))
     wape = float(np.sum(np.abs(actual - predicted)) / denom * 100) if denom else None
-    baseline_mae = float(mean_absolute_error(actual, np.repeat(float(np.mean(y[train_ix])), len(test_ix))))
-    fitted = model().fit(x, y)
-    importance = sorted(zip(FEATURES, fitted.feature_importances_), key=lambda pair: pair[1], reverse=True)
-    result.update({"available": True, "reason": None, "fitted_model": fitted,
-        "evaluation": {"method": "chronological 80/20 holdout", "mae": round(mae, 3),
-            "rmse": round(rmse, 3), "wape_percent": round(wape, 2) if wape is not None else None,
-            "baseline_mae": round(baseline_mae, 3), "beats_mean_baseline": mae < baseline_mae,
-            "holdout_rows": int(len(test_ix)), "holdout_start": min(dates[i] for i in test_ix).isoformat()},
+    if winner_factory is None:
+        fitted = None
+        importance = []
+    else:
+        fitted = winner_factory().fit(x, y)
+        raw_importance = getattr(fitted, "feature_importances_", None)
+        if raw_importance is None:
+            perm = permutation_importance(winner_eval_model, x[test_ix], y[test_ix],
+                                          n_repeats=3, random_state=42, n_jobs=1,
+                                          scoring="neg_mean_absolute_error")
+            raw_importance = np.maximum(0, perm.importances_mean)
+        importance = sorted(zip(FEATURES, raw_importance), key=lambda pair: pair[1], reverse=True)
+    result.update({"available": True, "model": winner_name, "reason": None, "fitted_model": fitted,
+        "evaluation": {"method": "strict chronological 80/20 date holdout", "selected_model": winner_name,
+            "mae": round(winner_mae, 3), "rmse": round(rmse, 3),
+            "wape_percent": round(wape, 2) if wape is not None else None,
+            "baseline_mae": round(seasonal_mae, 3), "mean_baseline_mae": round(mean_mae, 3),
+            "beats_mean_baseline": winner_mae < mean_mae, "beats_seven_day_baseline": winner_mae < seasonal_mae,
+            "holdout_rows": int(len(test_ix)), "holdout_start": holdout_start.isoformat()},
         "feature_importance": [{"feature": key, "importance": round(float(value), 4)} for key, value in importance[:8]]})
     return result
 
 
+class _SevenDayMeanModel:
+    def predict(self, features):
+        return np.maximum(0, np.asarray(features)[:, FEATURES.index("mean_7")])
+
+
 def evaluate_and_forecast(sales, products, product, days: int, stockouts=(),
-                          model_bundle=None, first_forecast_day: date | None = None):
+                          model_bundle=None, first_forecast_day: date | None = None,
+                          weather_by_date=None, forecast_weather_by_date=None):
     """Evaluate a shared store model and recursively forecast one product."""
     ids = {item.name: item.id for item in products}
-    result = {"available": False, "model": "RandomForestRegressor", "training_rows": 0,
+    result = {"available": False, "model": "SeasonalMeanBaseline", "training_rows": 0,
               "evaluation": None, "feature_importance": [], "forecast": [],
               "stockout_days_adjusted": 0, "reason": None}
-    bundle = model_bundle or fit_demand_model(sales, products, stockouts)
+    weather_by_date = weather_by_date or {}
+    forecast_weather_by_date = forecast_weather_by_date or {}
+    bundle = model_bundle or fit_demand_model(sales, products, stockouts, weather_by_date)
     result.update({key: value for key, value in bundle.items() if key != "fitted_model"})
     result["forecast"] = []
     if not bundle["available"] or product.name not in ids:
@@ -168,7 +232,9 @@ def evaluate_and_forecast(sales, products, product, days: int, stockouts=(),
     points = []
     for offset in range(days):
         target_day = first_day + timedelta(days=offset)
-        prediction = max(0.0, float(bundle["fitted_model"].predict([_features(product.id, target_day, history)])[0]))
+        model = bundle["fitted_model"] or _SevenDayMeanModel()
+        weather = forecast_weather_by_date if bundle.get("weather_features_enabled") else None
+        prediction = max(0.0, float(model.predict(np.asarray([_features(product.id, target_day, history, weather)]))[0]))
         points.append({"date": target_day.isoformat(), "units": round(prediction, 2)})
         history.append(prediction)
     result.update({"available": True, "forecast": points})
