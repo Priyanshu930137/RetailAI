@@ -14,6 +14,16 @@ python -m uvicorn app.main:app --reload
 
 Open http://127.0.0.1:8000/. API docs are at http://127.0.0.1:8000/docs. The existing SQLite database is preserved. An empty database is seeded with example products.
 
+## Neon / Postgres database
+
+RetailAI uses `DATABASE_URL` (or `NEON_DATABASE_URL`) when configured, and falls back to the existing `backend/retailai.db` SQLite file for local development. Copy a Postgres connection string from the Neon Console for the Neon project named `ReailAI`, and set it as a private environment variable in the deployment or local run configuration. Do not commit the connection string. The app converts standard `postgresql://` Neon URLs to SQLAlchemy's psycopg 3 driver and requires SSL parameters supplied by Neon.
+
+Install the added driver with `python -m pip install -r backend/requirements.txt`. On an empty Neon database, start the app normally; it creates tables without inserting demo products. To bring the existing local SQLite records across, set `DATABASE_URL` to the Neon URL and, from the `backend` directory, run `python migrate_sqlite_to_neon.py`. The one-time migration preserves IDs and all available rows, resets Postgres ID sequences, and refuses to copy into a target that already contains RetailAI rows. It does not modify or delete the SQLite source. Make a backup before migrating; the migration requires network access and a valid Neon URL.
+
+## Deploy on Render
+
+The root `render.yaml` defines the FastAPI web service, build/start commands, `/api/health` check, and automatic deploys from `main`. To launch it, push this file to GitHub, sign in to Render, choose **New → Blueprint**, connect `Priyanshu930137/RetailAI`, and select this repository's Blueprint. When prompted, provide `DATABASE_URL` from Neon as a secret value; do not commit `.env`. Render will build and deploy the service and provide an `onrender.com` URL. The service uses one worker and Python 3.12; persistent app data is stored in Neon, not the Render filesystem.
+
 ## Features
 
 - Persistent inventory: add products, search, edit stock, and protect items with sales history from accidental deletion.

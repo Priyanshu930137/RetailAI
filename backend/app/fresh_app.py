@@ -12,11 +12,11 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import func, text
+from sqlalchemy import extract, func, inspect, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.database import Base, SessionLocal, engine, get_db
+from app.database import Base, IS_SQLITE, SessionLocal, engine, get_db
 from app.demand_model import evaluate_and_forecast, fit_demand_model
 from app.forecasting import FESTIVALS, _festival_effect, build_forecast
 from app.models import Product, SalesImport, SalesRecord, StockAdjustment, StockoutEvent, StoreWeatherLocation
@@ -66,9 +66,9 @@ def _store_festival_uplift(product_name: str, event_date: date, sales):
 
 def initialize():
     Base.metadata.create_all(bind=engine)
-    # Add new planning columns in place; never recreate or discard existing rows.
+    # Add new columns in place on SQLite or Postgres; existing rows are retained.
     with engine.begin() as connection:
-        existing = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(products)").fetchall()}
+        existing = {column["name"] for column in inspect(connection).get_columns("products")}
         if "supplier_lead_time_days" not in existing:
             connection.exec_driver_sql("ALTER TABLE products ADD COLUMN supplier_lead_time_days INTEGER NOT NULL DEFAULT 3")
         if "supplier_min_order_quantity" not in existing:
@@ -86,17 +86,17 @@ def initialize():
         if "gst_rate_percent" not in existing:
             connection.exec_driver_sql("ALTER TABLE products ADD COLUMN gst_rate_percent FLOAT")
         if "gst_price_inclusive" not in existing:
-            connection.exec_driver_sql("ALTER TABLE products ADD COLUMN gst_price_inclusive BOOLEAN NOT NULL DEFAULT 1")
+            connection.exec_driver_sql("ALTER TABLE products ADD COLUMN gst_price_inclusive BOOLEAN NOT NULL DEFAULT TRUE")
         if "weather_sensitivity" not in existing:
             connection.exec_driver_sql("ALTER TABLE products ADD COLUMN weather_sensitivity VARCHAR(24) NOT NULL DEFAULT 'none'")
         if "created_at" not in existing:
-            connection.exec_driver_sql("ALTER TABLE products ADD COLUMN created_at DATETIME")
-        sales_columns = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(sales_records)").fetchall()}
+            connection.exec_driver_sql("ALTER TABLE products ADD COLUMN created_at TIMESTAMP")
+        sales_columns = {column["name"] for column in inspect(connection).get_columns("sales_records")}
         if "transaction_id" not in sales_columns:
             connection.exec_driver_sql("ALTER TABLE sales_records ADD COLUMN transaction_id VARCHAR(100)")
     db = SessionLocal()
     try:
-        if db.query(Product).count() == 0:
+        if IS_SQLITE and db.query(Product).count() == 0:
             db.add_all([
                 Product(name="Rice", stock=45, daily_demand=8, selling_price=60, unit_cost=45, supplier_lead_time_days=3, holding_cost_per_unit_day=0.08),
                 Product(name="Milk", stock=30, daily_demand=12, selling_price=30, unit_cost=23, supplier_lead_time_days=1, holding_cost_per_unit_day=0.15),
@@ -273,11 +273,14 @@ def analytics(db: Session = Depends(get_db)):
     ).filter(SalesRecord.sale_date >= daily_start, SalesRecord.sale_date <= today).group_by(SalesRecord.sale_date).order_by(SalesRecord.sale_date).all()
     month_index = today.year * 12 + today.month - 1 - 11
     month_start = date(month_index // 12, month_index % 12 + 1, 1)
+    sale_year = extract("year", SalesRecord.sale_date).label("year")
+    sale_month = extract("month", SalesRecord.sale_date).label("month")
     monthly_rows = db.query(
-        func.strftime("%Y-%m", SalesRecord.sale_date).label("month"),
+        sale_year,
+        sale_month,
         func.sum(SalesRecord.quantity).label("units"),
         func.sum(SalesRecord.quantity * SalesRecord.price).label("revenue"),
-    ).filter(SalesRecord.sale_date >= month_start, SalesRecord.sale_date <= today).group_by("month").order_by("month").all()
+    ).filter(SalesRecord.sale_date >= month_start, SalesRecord.sale_date <= today).group_by(sale_year, sale_month).order_by(sale_year, sale_month).all()
     products = db.query(Product).order_by(Product.name).all()
     all_time_rows = db.query(
         SalesRecord.product_name,
@@ -300,7 +303,7 @@ def analytics(db: Session = Depends(get_db)):
     lowest = sorted(ranked, key=lambda row: (row["units"], row["revenue"]))[:5]
     return {
         "daily": [{"period": row.sale_date.isoformat(), "units": int(row.units or 0), "revenue": round(float(row.revenue or 0), 2)} for row in daily_rows],
-        "monthly": [{"period": row.month, "units": int(row.units or 0), "revenue": round(float(row.revenue or 0), 2)} for row in monthly_rows],
+        "monthly": [{"period": f"{int(row.year):04d}-{int(row.month):02d}", "units": int(row.units or 0), "revenue": round(float(row.revenue or 0), 2)} for row in monthly_rows],
         "best_sellers_90d": best,
         "lowest_sellers_90d": lowest,
         "sales_by_product": [row for row in all_time_ranked if row["units"] > 0],

@@ -21,7 +21,7 @@ class Product(Base):
     expiry_date = Column(Date, nullable=True)
     hsn_code = Column(String(12), nullable=True)
     gst_rate_percent = Column(Float, nullable=True)
-    gst_price_inclusive = Column(Boolean, nullable=False, default=True, server_default="1")
+    gst_price_inclusive = Column(Boolean, nullable=False, default=True, server_default="true")
     weather_sensitivity = Column(String(24), nullable=False, default="none", server_default="none")
     minimum_gross_margin_percent = Column(Float, nullable=False, default=5, server_default="5")
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
