@@ -1051,6 +1051,39 @@ async function importCsv() {
 }
 
 function wireEvents() {
+  const navItems = [...document.querySelectorAll(".nav-item")];
+  const activateNav = (activeItem) => {
+    navItems.forEach((item) => {
+      const active = item === activeItem;
+      item.classList.toggle("active", active);
+      if (active) item.setAttribute("aria-current", "location");
+      else item.removeAttribute("aria-current");
+    });
+  };
+  for (const item of navItems) item.addEventListener("click", () => activateNav(item));
+  let navFrame = 0;
+  window.addEventListener("scroll", () => {
+    if (navFrame) return;
+    navFrame = requestAnimationFrame(() => {
+      navFrame = 0;
+      const targets = navItems.map((item) => {
+        const href = item.getAttribute("href");
+        const target = href === "#top" ? document.querySelector(".welcome-row") : document.querySelector(href);
+        return { item, target, top: target?.getBoundingClientRect().top ?? Infinity, bottom: target?.getBoundingClientRect().bottom ?? -Infinity };
+      }).filter((entry) => entry.target && entry.bottom > 76);
+      if (!targets.length) return;
+      const threshold = window.innerHeight * 0.32;
+      const passed = targets.filter((entry) => entry.top <= threshold);
+      const active = passed.length
+        ? passed.reduce((best, entry) => entry.top > best.top ? entry : best)
+        : targets.reduce((best, entry) => entry.top < best.top ? entry : best);
+      activateNav(active.item);
+    });
+  }, { passive: true });
+  window.addEventListener("hashchange", () => {
+    const active = navItems.find((item) => item.getAttribute("href") === location.hash);
+    if (active) activateNav(active);
+  });
   addWeatherSensitivityControls();
   if (!$("competitorPrice")) {
     const label = document.createElement("label"); label.textContent = "Competitor price";

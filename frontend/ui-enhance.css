@@ -1,0 +1,165 @@
+/* Quiet visual refresh: clearer type, more breathing room, and consistent surfaces. */
+:root {
+  --ink: #1d2c23;
+  --muted: #718078;
+  --line: #e4ebe5;
+  --paper: #f4f7f4;
+  --green: #28704a;
+  --deep: #173b2a;
+  --mint: #e9f4ec;
+  --shadow: 0 10px 30px rgba(28, 53, 37, .055);
+  --radius: 18px;
+}
+
+body { font-family: "Aptos", "Segoe UI", "Noto Sans Devanagari", Arial, sans-serif; font-size: 16px; line-height: 1.6; color: var(--ink); }
+h1, h2, h3, .brand, .metric-card>strong { font-family: "Aptos Display", "Segoe UI", "Noto Sans Devanagari", sans-serif; }
+.sidebar { width: 250px; padding: 28px 18px 22px; background: #fbfdfb; border-color: #e7ede8; }
+.brand { font-size: 23px; }
+.brand-mark { width: 42px; height: 42px; border-radius: 14px; background: linear-gradient(145deg, #1a4630, #286d48); }
+.store-switch { margin-top: 32px; margin-bottom: 28px; padding: 13px 11px; border-radius: 14px; background: #fff; }
+.nav { gap: 7px; }
+.nav-item { height: 46px; border-radius: 11px; font-size: 14px; }
+.nav-item:hover { background: #f1f6f1; }
+.nav-item.active { background: #eaf4ec; box-shadow: inset 3px 0 #4c9164; }
+.main { max-width: 1660px; margin-left: 250px; padding: 0 40px 42px; }
+.topbar { height: 76px; border-color: #e7ede8; }
+.breadcrumbs { font-size: 11px; }
+.topbar-right { gap: 14px; }
+.date-pill, .language-select { font-size: 11px; border-radius: 10px; }
+.welcome-row { min-height: 225px; margin: 28px 0 19px; padding: 34px 38px; border: 0; border-radius: 22px; color: white; background: linear-gradient(115deg, #173b2a 0%, #245a3b 65%, #33734d 100%); box-shadow: 0 16px 36px rgba(25, 63, 41, .15); }
+.welcome-row .overline { color: #c3dbc8; }
+.welcome-row h1 { max-width: 610px; font-size: clamp(34px, 3.4vw, 46px); line-height: 1.08; letter-spacing: -1.8px; }
+.welcome-copy { max-width: 470px; color: #d6e5d9; font-size: 14px; }
+.welcome-art { right: 6%; width: 300px; opacity: .55; }
+.art-sun { background: #efcb7e; box-shadow: 0 0 0 12px rgba(239, 203, 126, .12); }
+.block-one { background: #78a682; }
+.block-two { background: #a4c19e; }
+.block-three { background: #d58c68; }
+.art-line { background: #c5ddc8; }
+.metric-grid { gap: 16px; }
+.metric-card, .panel { border-color: #e5ebe6; border-radius: 17px; box-shadow: 0 5px 20px rgba(28, 53, 37, .035); }
+.metric-card { min-height: 164px; padding: 20px; transition: transform .18s ease, box-shadow .18s ease; }
+.metric-card:hover { transform: translateY(-2px); box-shadow: 0 11px 25px rgba(28, 53, 37, .08); }
+.metric-head { color: #738178; font-size: 11px; letter-spacing: .9px; }
+.metric-icon { width: 34px; height: 34px; border-radius: 11px; }
+.metric-card>strong { margin: 16px 0 4px; font-size: 30px; letter-spacing: -1px; }
+.metric-card>small, .metric-foot { font-size: 12px; color: #718078; }
+.text-link { font-size: 11px; }
+.signal-row { gap: 14px; margin: 16px 0 22px; }
+.signal { align-items: center; gap: 13px; min-height: 88px; padding: 16px; border-radius: 15px; }
+.signal-symbol { width: 38px; height: 38px; border-radius: 12px; }
+.signal-label { font-size: 10px; letter-spacing: 1px; }
+.signal strong { font-size: 14px; }
+.signal small { font-size: 12px; }
+.content-grid { gap: 18px; margin-bottom: 19px; }
+.panel { padding: 23px 24px; margin-bottom: 18px; }
+.panel-title h2, .section-intro h2 { font-size: 21px; letter-spacing: -.55px; }
+.panel-title p, .section-intro p { font-size: 13px; line-height: 1.55; }
+.overline { font-size: 11px; letter-spacing: 1.1px; }
+.period-chip, .model-tag { padding: 7px 10px; border-radius: 8px; font-size: 9px; }
+.chart-wrap { height: 205px; margin-top: 23px; }
+.chart-y, .chart-legend { font-size: 11px; }
+.action-list { gap: 12px; }
+.action-item { padding: 13px; border-radius: 12px; }
+.action-item b { font-size: 13px; }
+.action-item small { font-size: 12px; }
+.panel-link { font-size: 12px; }
+.advisor-panel { padding: 27px; }
+.advisor-form { gap: 12px; margin: 23px 0; }
+.advisor-form label, .product-form label, .sale-form label { gap: 8px; font-size: 12px; }
+.advisor-form input, .advisor-form select, .product-form input, .sale-form input, .sale-form select, .search { height: 46px; padding: 0 13px; border-color: #dfe7e0; border-radius: 10px; font-size: 14px; }
+.button { height: 44px; padding: 0 17px; border-radius: 10px; font-size: 12px; }
+.button-dark { background: #1c4b32; }
+.forecast-output { padding: 18px; border-color: #e4ebe5; border-radius: 14px; background: #f9fbf9; }
+.forecast-kpi { padding: 14px; border-radius: 12px; }
+.forecast-kpi span { font-size: 10px; }
+.forecast-kpi b { font-size: 20px; }
+.forecast-kpi small, .detail-box p { font-size: 12px; line-height: 1.55; }
+.detail-box { padding: 13px; border: 1px solid #e5eee6; border-radius: 11px; }
+.detail-box b { font-size: 10px; }
+.method-note { font-size: 11px; }
+.inventory-title { margin-bottom: 20px; }
+.inventory-actions { gap: 10px; }
+.search { width: 220px; }
+th { padding: 13px 12px; font-size: 10px; }
+td { padding: 15px 12px; font-size: 12px; }
+.subcell { font-size: 10px; }
+.risk-pill { padding: 6px 9px; font-size: 10px; }
+.row-actions { gap: 8px; }
+.row-actions button { font-size: 11px; }
+.product-form-wrap, .drop-area { padding: 17px; border-radius: 13px; }
+.product-form { gap: 12px; }
+.drop-area b { font-size: 12px; }
+.drop-area small { font-size: 11px; }
+.sale-form { gap: 14px; }
+.form-message { font-size: 12px; }
+.footer { padding: 15px 2px; font-size: 10px; }
+.empty-state { font-size: 12px !important; }
+.toast { padding: 14px 18px; border-radius: 12px; font-size: 13px; }
+.weather-panel { padding: 24px; }
+.weather-day { border-color: #e4ebe5; border-radius: 12px; background: #fbfdfb; font-size: 11px; }
+.weather-insight { border-color: #e4ebe5; border-radius: 13px; }
+.risk-advice-card { gap: 7px; padding: 14px; border-radius: 12px; }
+.risk-advice-card b { font-size: 13px; }
+.risk-advice-card span { font-size: 12px; }
+.risk-advice-card small { font-size: 12px; line-height: 1.55; }
+.trend-button { font-size: 11px; padding: 9px 11px; }
+.trend-legend { font-size: 11px; }
+.trend-column::after, .chart-day::after { font-size: 9px; }
+.rank-number { font-size: 11px; }
+.rank-name { font-size: 12px; }
+.rank-meta b { font-size: 11px; }
+.rank-meta small { font-size: 10px; }
+.festival-item { padding: 14px; border-radius: 12px; }
+.festival-item b { font-size: 12px; }
+.festival-item small { font-size: 11px; line-height: 1.5; }
+.festival-item span { font-size: 10px; }
+.stockout-history-head b { font-size: 13px; }
+.stockout-history-head small, .movement-row small, .bundle-row small { font-size: 11px; line-height: 1.5; }
+.bundle-row { padding: 15px; border-radius: 13px; }
+.language-select { min-height: 38px; font-size: 12px; }
+.icon-button { width: 38px; height: 38px; border-radius: 11px; }
+.nav-item.active { color: #16492f; background: #e6f2e9; box-shadow: inset 3px 0 #338454; }
+
+@media (max-width: 1150px) {
+  .sidebar { width: 220px; }
+  .main { margin-left: 220px; padding-right: 26px; padding-left: 26px; }
+  .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .welcome-row { min-height: 205px; }
+}
+@media (max-width: 760px) {
+  .main { padding-right: 19px; padding-left: 19px; }
+  .signal-row { grid-template-columns: 1fr; }
+  .signal { min-height: 74px; }
+  .content-grid, .sales-tools { grid-template-columns: 1fr; }
+  .advisor-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .advisor-form .button { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+  .main { padding-right: 14px; padding-left: 14px; }
+  .topbar { height: 62px; }
+  .topbar-right { gap: 8px; }
+  .date-pill { display: none; }
+  .welcome-row { min-height: 210px; padding: 25px 22px; border-radius: 18px; }
+  .welcome-row h1 { max-width: 300px; font-size: 34px; }
+  .welcome-copy { max-width: 280px; font-size: 12px; }
+  .welcome-art { right: -122px; opacity: .24; }
+  .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .metric-card { min-height: 142px; padding: 14px; }
+  .metric-head { font-size: 8px; }
+  .metric-card>strong { font-size: 24px; }
+  .metric-card>small, .metric-foot { font-size: 9px; }
+  .panel { padding: 18px 16px; }
+  .panel-title h2, .section-intro h2 { font-size: 19px; }
+  .panel-title p, .section-intro p { font-size: 11px; }
+  .forecast-result { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .forecast-details { grid-template-columns: 1fr; }
+  .advisor-form { gap: 10px; }
+  .advisor-form label, .product-form label, .sale-form label { font-size: 10px; }
+  .inventory-panel .product-form, .product-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inventory-panel .form-buttons { grid-column: 1 / -1; }
+  .footer { align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
